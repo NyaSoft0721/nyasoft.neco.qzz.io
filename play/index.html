@@ -1,1 +1,688 @@
-喵喵
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=2.0, user-scalable=yes, viewport-fit=cover">
+  <title>柔情斗地主 · 百e补贴</title>
+  <p>本游戏由NekoBanka Ai开发<p/>
+  <style>
+    :root {
+      --bg: #0a5c2a;
+      --table: #0d7a36;
+      --gold: #f0c040;
+      --card-bg: #fff;
+      --card-red: #d43;
+      --card-black: #222;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      background: #1a3c1a; font-family: 'Microsoft YaHei','PingFang SC',sans-serif;
+      display: flex; justify-content: center; align-items: center; min-height: 100vh;
+      user-select: none; -webkit-tap-highlight-color: transparent;
+      background-image: radial-gradient(ellipse at center, #1a5c2a 0%, #0a2a0a 100%);
+      padding: 10px; overflow-x: hidden;
+    }
+    .game-container {
+      width: 100%; max-width: 1100px; background: var(--table);
+      border-radius: 28px; box-shadow: 0 25px 70px rgba(0,0,0,0.7);
+      padding: 10px 8px; position: relative; overflow: hidden;
+      border: 4px solid #1a4a1a; display: flex; flex-direction: column;
+    }
+    .header-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 6px 12px; background: rgba(0,0,0,0.4); border-radius: 16px;
+      margin-bottom: 6px; flex-wrap: wrap; gap: 6px;
+    }
+    .header-item {
+      color: #f5d060; font-weight: bold; font-size: 13px;
+      background: rgba(0,0,0,0.5); padding: 5px 12px; border-radius: 20px;
+      white-space: nowrap; border: 1px solid rgba(240,192,64,0.3);
+    }
+    .header-item .val { color: #fff; font-size: 15px; margin-left: 4px; }
+    .val.multiplier { color: #ffdd57; font-size: 16px; }
+    .play-area {
+      display: flex; justify-content: space-around; align-items: center;
+      min-height: 100px; gap: 6px; flex-wrap: wrap; padding: 6px;
+    }
+    .ai-section { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 80px; flex: 1; }
+    .avatar-img { width: 50px; height: 50px; object-fit: contain; margin-bottom: 2px; }
+    .ai-label { color: #ccc; font-size: 11px; font-weight: bold; }
+    .ai-cards-count { color: #ffd700; font-size: 10px; }
+    .ai-played { display: flex; flex-wrap: wrap; gap: 2px; justify-content: center; min-height: 30px; align-items: center; max-height: 80px; overflow-y: auto; }
+    .mini-card { width: 24px; height: 32px; background: #fff; border-radius: 3px; font-size: 8px; font-weight: bold; display: flex; align-items: center; justify-content: center; border: 1px solid #ccc; }
+    .mini-card.red { color: #d43; } .mini-card.black { color: #222; }
+    .pass-text { color: #ff9900; font-weight: bold; font-size: 12px; }
+    .center-zone { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 120px; }
+    .dizhu-cards { display: flex; gap: 2px; flex-wrap: wrap; justify-content: center; max-height: 70px; overflow-y: auto; background: rgba(0,0,0,0.2); border-radius: 8px; padding: 3px; }
+    .turn-indicator { color: #ff0; font-weight: bold; font-size: 12px; }
+    .player-section { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 6px; }
+    .player-label { color: #fff; font-weight: bold; font-size: 13px; background: #c0392b; padding: 4px 14px; border-radius: 14px; }
+    .player-label.dizhu { background: #e67e22; }
+    .my-played { display: flex; flex-wrap: wrap; gap: 2px; justify-content: center; min-height: 30px; align-items: center; max-height: 90px; overflow-y: auto; }
+    .my-cards-container { display: flex; flex-wrap: wrap; gap: 0; justify-content: center; padding: 4px; max-width: 100%; max-height: 260px; overflow-y: auto; align-items: center; }
+    .card-item {
+      width: 40px; height: 58px; background: #fff; border-radius: 5px;
+      cursor: pointer; font-weight: bold; font-size: 13px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      border: 2px solid #ddd; transition: all 0.15s; position: relative;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2); flex-shrink: 0; margin-left: -18px;
+    }
+    .card-item:first-child { margin-left: 0; }
+    .card-item:hover { transform: translateY(-5px); z-index: 5; border-color: #f0c040; }
+    .card-item.selected { transform: translateY(-14px); border-color: #ff0; box-shadow: 0 8px 18px rgba(255,200,0,0.6); background: #fffde0; z-index: 10; }
+    .card-item .card-suit { font-size: 9px; position: absolute; top: 2px; left: 3px; }
+    .card-item .card-value { font-size: 14px; }
+    .card-item.red { color: #d43; } .card-item.black { color: #222; }
+    .small-cards .card-item { width: 28px; height: 40px; font-size: 9px; margin-left: -12px; }
+    .small-cards .card-item .card-value { font-size: 10px; }
+    .small-cards .card-item .card-suit { font-size: 6px; top: 1px; left: 1px; }
+    .btn-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; padding: 6px; }
+    .btn { padding: 8px 18px; border-radius: 20px; font-weight: bold; font-size: 13px; cursor: pointer; border: none; transition: 0.2s; }
+    .btn:hover { transform: scale(1.03); } .btn:active { transform: scale(0.95); }
+    .btn-primary { background: #e8a020; color: #333; }
+    .btn-outline { background: transparent; color: #fff; border: 2px solid #fff; }
+    .btn:disabled { opacity: 0.4; pointer-events: none; }
+    .overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.75); display: flex; justify-content: center; align-items: center; z-index: 200; }
+    .panel { background: #1a1a2e; border-radius: 20px; padding: 20px; color: #fff; text-align: center; max-width: 480px; width: 90%; border: 2px solid #f0c040; max-height: 90vh; overflow-y: auto; }
+    .panel h3 { color: #f0c040; margin-bottom: 14px; }
+    .panel select { padding: 8px 12px; border-radius: 20px; font-size: 14px; margin: 6px; background: #2a2a3e; color: #fff; border: 2px solid #555; width: 80%; }
+    .panel label { display: block; margin-top: 10px; color: #ccc; font-size: 12px; }
+    .big-btn { padding: 12px 36px; font-size: 17px; border-radius: 28px; margin-top: 14px; }
+    .result-text { font-size: 22px; font-weight: bold; margin: 10px 0; }
+    .result-text.win { color: #2ecc71; } .result-text.lose { color: #e74c3c; }
+    .func-ball { position: fixed; bottom: 30px; right: 30px; width: 50px; height: 50px; background: #f0c040; border-radius: 50%; box-shadow: 0 4px 15px rgba(0,0,0,0.5); cursor: grab; z-index: 300; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #333; }
+    .func-panel { position: fixed; bottom: 90px; right: 30px; background: #1a1a2e; border: 2px solid #f0c040; border-radius: 16px; padding: 14px; color: #fff; z-index: 310; display: none; flex-direction: column; gap: 8px; min-width: 200px; }
+    .func-panel label { font-size: 12px; display: flex; align-items: center; gap: 6px; }
+    .func-panel input[type="color"] { width: 30px; height: 20px; border: none; }
+    .esp-canvas { position: absolute; top:0; left:0; width:100%; height:100%; pointer-events: none; z-index: 50; }
+  </style>
+</head>
+<body>
+<div class="game-container" id="gameContainer">
+  <div class="header-row">
+    <span class="header-item">💰<span class="val" id="goldDisplay">100亿</span></span>
+    <span class="header-item">📊倍率<span class="val multiplier" id="multiplierDisplay">×1</span></span>
+    <span class="header-item">💣<span class="val" id="bombCountDisplay">0</span></span>
+    <span class="header-item">模式<span class="val" id="modeDisplay">54张</span></span>
+    <span class="header-item" id="springDisplay" style="display:none;">🌸</span>
+  </div>
+  <div class="play-area">
+    <div class="ai-section" id="ai1Section">
+      <img class="avatar-img" src="https://nyasoft.neco.qzz.io/play/resources/bot.png" alt="bot" id="ai1Avatar">
+      <div class="ai-label" id="ai1Label">AI-1</div>
+      <div class="ai-cards-count" id="ai1Count">0张</div>
+      <div class="ai-played" id="ai1Played"></div>
+    </div>
+    <div class="center-zone">
+      <div class="dizhu-cards" id="dizhuCardsDisplay"></div>
+      <div class="turn-indicator" id="turnIndicator"></div>
+      <div style="color:#ccc;font-size:10px;" id="roundInfo"></div>
+    </div>
+    <div class="ai-section" id="ai2Section">
+      <img class="avatar-img" src="https://nyasoft.neco.qzz.io/play/resources/bot.png" alt="bot" id="ai2Avatar">
+      <div class="ai-label" id="ai2Label">AI-2</div>
+      <div class="ai-cards-count" id="ai2Count">0张</div>
+      <div class="ai-played" id="ai2Played"></div>
+    </div>
+  </div>
+  <div style="text-align:center;"><div class="my-played" id="myPlayed"></div></div>
+  <div class="player-section">
+    <div style="display:flex; align-items:center; gap:6px;">
+      <img class="avatar-img" src="https://nyasoft.neco.qzz.io/play/resources/player.png" style="width:40px;height:40px;" id="playerAvatar">
+      <span class="player-label" id="playerLabel">我</span>
+    </div>
+    <div class="my-cards-container" id="myCardsContainer"></div>
+    <div class="btn-row" id="actionButtons">
+      <button class="btn btn-primary" id="btnPlay">出牌</button>
+      <button class="btn btn-outline" id="btnPass">不出</button>
+      <button class="btn btn-outline" id="btnHint">提示</button>
+    </div>
+  </div>
+  <canvas class="esp-canvas" id="espCanvas"></canvas>
+</div>
+
+<div class="func-ball" id="funcBall">⚙️</div>
+<div class="func-panel" id="funcPanel">
+  <label><input type="checkbox" id="espToggle"> 显示ESP框</label>
+  <label>ESP颜色 <input type="color" id="espColor" value="#00ff00"></label>
+  <label><input type="checkbox" id="lineToggle"> 显示连线</label>
+  <label>线颜色 <input type="color" id="lineColor" value="#ff0000"></label>
+</div>
+
+<audio id="bgMusic" loop autoplay style="display:none;">
+  <source src="https://nyasoft.neco.qzz.io/play/resources/music.mp3" type="audio/mpeg">
+</audio>
+
+<div class="overlay" id="setupOverlay">
+  <div class="panel">
+    <h3>🃏 斗地主设置</h3>
+    <label>AI难度</label>
+    <select id="aiDifficulty">
+      <option value="easy">😊 简单</option>
+      <option value="medium" selected>🤔 中等</option>
+      <option value="hard">😈 困难</option>
+    </select>
+    <label>摸牌运气</label>
+    <select id="luckLevel">
+      <option value="random">🎲 随机</option>
+      <option value="medium">🍀 中等好运</option>
+      <option value="good">👑 超级好运</option>
+      <option value="invincible">⚡ 无敌模式(全王)</option>
+    </select>
+    <label>扑克总牌数</label>
+    <select id="deckMode">
+      <option value="54">🃏 54张</option>
+      <option value="570">🃏 570张 (10副·大小王多)</option>
+      <option value="57000">🃏 57000张 (1000副·大小王多)</option>
+    </select>
+    <button class="btn btn-primary big-btn" onclick="startNewGame()">开始游戏</button>
+    <p style="color:#888;font-size:10px;">初始金豆100亿 | 王炸倍率 K^(K^K)</p>
+  </div>
+</div>
+<div class="overlay" id="resultOverlay" style="display:none;">
+  <div class="panel" id="resultPanel"></div>
+</div>
+<div class="overlay" id="doubleOverlay" style="display:none;">
+  <div class="panel">
+    <h3>🔥 加倍时间</h3>
+    <p style="color:#ccc;">当前倍数: <span id="doubleCurrentMultiplier">×1</span></p>
+    <button class="btn btn-outline big-btn" onclick="chooseDouble('none')">不加倍</button>
+    <button class="btn btn-primary big-btn" onclick="chooseDouble('double')">加倍 (×4)</button>
+    <button class="btn btn-danger big-btn" onclick="chooseDouble('super')">超级加倍 (2^当前)</button>
+  </div>
+</div>
+
+<script>
+  (function() {
+    const SUITS = ['♠','♥','♣','♦'];
+    const VALUE_DISPLAY = {3:'3',4:'4',5:'5',6:'6',7:'7',8:'8',9:'9',10:'10',11:'J',12:'Q',13:'K',14:'A',15:'2',16:'小王',17:'大王'};
+    class Card {
+      constructor(v,s,di=0){ this.value=v; this.suit=s; this.deckIndex=di; this.id=`${v}_${s}_${di}`; }
+      get color(){ return this.value>=16?'red':(SUITS.indexOf(this.suit)%2===1?'red':'black'); }
+      get displayValue(){ return VALUE_DISPLAY[this.value]||this.value; }
+      get displaySuit(){ return this.value>=16?'':this.suit; }
+    }
+    function createPool(total){
+      let cards=[];
+      if(total===54){
+        for(let v=3;v<=15;v++) for(let s of SUITS) cards.push(new Card(v,s,0));
+        cards.push(new Card(16,'🃏',0)); cards.push(new Card(17,'🃏',1));
+      } else if(total===570){
+        const decks=10;
+        for(let d=0;d<decks;d++){
+          for(let v=3;v<=15;v++) for(let s of SUITS) cards.push(new Card(v,s,d));
+          for(let i=0;i<3;i++) cards.push(new Card(16,'🃏',d*3+i));
+          for(let i=0;i<2;i++) cards.push(new Card(17,'🃏',d*2+i+1000));
+        }
+      } else if(total===57000){
+        const decks=1000;
+        for(let d=0;d<decks;d++){
+          for(let v=3;v<=15;v++) for(let s of SUITS) cards.push(new Card(v,s,d));
+          for(let i=0;i<3;i++) cards.push(new Card(16,'🃏',d*3+i));
+          for(let i=0;i<2;i++) cards.push(new Card(17,'🃏',d*2+i+1000));
+        }
+      }
+      return cards;
+    }
+    function shuffle(arr){ let a=[...arr]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+    function sortHand(cards){ return [...cards].sort((a,b)=>a.value!==b.value?a.value-b.value:SUITS.indexOf(a.suit)-SUITS.indexOf(b.suit)||a.deckIndex-b.deckIndex); }
+    function isConsecutive(arr){ for(let i=1;i<arr.length;i++) if(arr[i]!==arr[i-1]+1) return false; return true; }
+
+    function analyzeGroup(cards){
+      if(!cards||cards.length===0) return null;
+      const n=cards.length, vals=cards.map(c=>c.value).sort((a,b)=>a-b);
+      const allJokers = cards.every(c=>c.value>=16);
+      if(allJokers) return {type:'WANG_ZHA', main:Math.max(...vals), len:n, weight:2000+n*10};
+      const vc={}; vals.forEach(v=>vc[v]=(vc[v]||0)+1);
+      const counts=Object.values(vc).sort((a,b)=>b-a), uvals=Object.keys(vc).map(Number).sort((a,b)=>a-b);
+      const maxCount=counts[0];
+      if(uvals.length===1&&n>=4) return {type:'BOMB',main:uvals[0],len:n,weight:500+n};
+      if(n===1) return {type:'SINGLE',main:vals[0],len:0,weight:vals[0]};
+      if(n===2&&uvals.length===1&&maxCount===2) return {type:'PAIR',main:uvals[0],len:0,weight:uvals[0]};
+      if(n===3&&uvals.length===1&&maxCount===3) return {type:'THREE',main:uvals[0],len:0,weight:uvals[0]};
+      if(n===4&&counts[0]===3&&counts[1]===1) return {type:'THREE_ONE',main:uvals.find(v=>vc[v]===3),len:0,weight:uvals.find(v=>vc[v]===3)};
+      if(n===5&&counts[0]===3&&counts[1]===2) return {type:'THREE_TWO',main:uvals.find(v=>vc[v]===3),len:0,weight:uvals.find(v=>vc[v]===3)};
+      if(n===6&&counts[0]===4&&counts[1]===2) return {type:'FOUR_TWO',main:uvals.find(v=>vc[v]===4),len:0,weight:uvals.find(v=>vc[v]===4)};
+      if(n===8&&counts[0]===4&&counts[1]===4) return {type:'FOUR_TWO_PAIRS',main:Math.max(...uvals.filter(v=>vc[v]===4)),len:0,weight:Math.max(...uvals.filter(v=>vc[v]===4))};
+      if(n>=5&&maxCount===1&&uvals.length===n&&isConsecutive(uvals)&&uvals[n-1]<=14) return {type:'STRAIGHT',main:uvals[n-1],len:n,weight:uvals[n-1]+n};
+      if(n>=6&&n%2===0&&counts.every(c=>c===2)&&uvals.length>=3&&isConsecutive(uvals)&&uvals[uvals.length-1]<=14) return {type:'STRAIGHT_PAIR',main:uvals[uvals.length-1],len:uvals.length,weight:uvals[uvals.length-1]+uvals.length};
+      const tripleCount=counts.filter(c=>c===3).length;
+      if(tripleCount>=2&&counts.filter(c=>c===1).length===tripleCount&&n===tripleCount*4){
+        const triples=uvals.filter(v=>vc[v]===3).sort((a,b)=>a-b);
+        if(triples.length===tripleCount&&isConsecutive(triples)&&triples[triples.length-1]<=14) return {type:'PLANE_WING_SINGLE',main:triples[triples.length-1],len:triples.length,weight:triples[triples.length-1]+triples.length};
+      }
+      const pairCount=counts.filter(c=>c===2).length;
+      if(tripleCount>=2&&pairCount===tripleCount&&n===tripleCount*5){
+        const triples=uvals.filter(v=>vc[v]===3).sort((a,b)=>a-b);
+        if(triples.length===tripleCount&&isConsecutive(triples)&&triples[triples.length-1]<=14) return {type:'PLANE_WING_PAIR',main:triples[triples.length-1],len:triples.length,weight:triples[triples.length-1]+triples.length};
+      }
+      return null;
+    }
+
+    function canBeat(my,last){
+      if(!last) return true; if(!my) return false;
+      if(my.type==='WANG_ZHA') return true;
+      if(last.type==='WANG_ZHA') return false;
+      if(my.type==='BOMB'&&last.type!=='BOMB') return true;
+      if(my.type===last.type){
+        if(my.type==='BOMB') return my.len>last.len||(my.len===last.len&&my.main>last.main);
+        if(my.len===last.len) return my.main>last.main;
+        return false;
+      }
+      if(my.type==='BOMB') return true;
+      return false;
+    }
+
+    // 大数存储：倍率与金豆均使用log10表示
+    let multiplierLog10 = 0;
+    let goldLog10 = Math.log10(10000000000); // 初始100亿
+
+    function formatLog10(valueLog10, prefix = '') {
+      if (valueLog10 === Infinity) return '∞';
+      if (valueLog10 < 7) {
+        const val = Math.pow(10, valueLog10);
+        return prefix + Math.round(val).toLocaleString();
+      }
+      const exp = Math.floor(valueLog10);
+      return prefix + '1e' + exp;
+    }
+
+    function applyMultiplierAdd(logDelta) {
+      if (multiplierLog10 === Infinity) return;
+      multiplierLog10 += logDelta;
+    }
+
+    function applyWangZhaBoost(k) {
+      // 王炸倍率 = K^(K^K) 的对数增量 = (K^K) * log10(K)
+      if (k <= 0) return;
+      if (k > 10) {
+        multiplierLog10 = Infinity;
+        return;
+      }
+      const kPowK = Math.pow(k, k);
+      if (!isFinite(kPowK)) {
+        multiplierLog10 = Infinity;
+        return;
+      }
+      const logDelta = kPowK * Math.log10(k);
+      if (!isFinite(logDelta)) {
+        multiplierLog10 = Infinity;
+        return;
+      }
+      applyMultiplierAdd(logDelta);
+    }
+
+    // 对数加法：log10(10^a + 10^b) 或 10^a + b (b为普通数)
+    function logAdd(logA, logB) {
+      if (logA === Infinity || logB === Infinity) return Infinity;
+      if (logA - logB > 15) return logA;
+      if (logB - logA > 15) return logB;
+      const max = Math.max(logA, logB);
+      const min = Math.min(logA, logB);
+      return max + Math.log10(1 + Math.pow(10, min - max));
+    }
+
+    function logSubtract(logA, logB) {
+      if (logA === Infinity) return Infinity;
+      if (logB === Infinity) return -Infinity;
+      if (logA - logB > 15) return logA;
+      if (logA <= logB) return -Infinity;
+      return logA + Math.log10(1 - Math.pow(10, logB - logA));
+    }
+
+    const state = {
+      bombCount:0, isSpring:false, isReverseSpring:false,
+      deckMode:54, aiDifficulty:'medium', luckLevel:'random',
+      players:[
+        {name:'我',cards:[],isHuman:true,isDizhu:false,passed:false,finished:false,playedCards:[]},
+        {name:'AI1',cards:[],isHuman:false,isDizhu:false,passed:false,finished:false,playedCards:[]},
+        {name:'AI2',cards:[],isHuman:false,isDizhu:false,passed:false,finished:false,playedCards:[]}
+      ],
+      dizhuCards:[], currentPlayer:0, lastPlayed:null, lastBy:-1, phase:'setup', passCount:0
+    };
+    const human = ()=>state.players[0], ai1 = ()=>state.players[1], ai2 = ()=>state.players[2];
+    const dizhu = ()=>state.players.find(p=>p.isDizhu);
+
+    function deal(){
+      const mode = state.deckMode;
+      const isLarge = mode >= 570;
+      const humanNeed = isLarge ? 170 : 17;
+      const aiNeed = humanNeed;
+      const dizhuNeed = isLarge ? 30 : 3;
+      let pool = createPool(mode);
+      let shuffled = shuffle(pool);
+      if(state.luckLevel==='invincible'){
+        let hand=[];
+        for(let i=0;i<humanNeed;i++) hand.push(new Card(i%2===0?17:16, '🃏', i));
+        state.players[0].cards = sortHand(hand);
+        let rest = shuffled.filter(c=>c.value<16);
+        state.players[1].cards = sortHand(rest.slice(0, aiNeed));
+        state.players[2].cards = sortHand(rest.slice(aiNeed, aiNeed*2));
+        state.dizhuCards = rest.slice(aiNeed*2, aiNeed*2+dizhuNeed);
+      } else if(state.luckLevel!=='random'){
+        const good=[15,16,17,14,13];
+        let humanPool=[], goodCards=shuffled.filter(c=>good.includes(c.value)), normal=shuffled.filter(c=>!good.includes(c.value));
+        let gc=Math.min(Math.floor(humanNeed*(state.luckLevel==='good'?0.55:0.35)), goodCards.length);
+        humanPool=[...shuffle(goodCards).slice(0,gc), ...shuffle(normal).slice(0,humanNeed-gc)];
+        let ids=new Set(humanPool.map(c=>c.id));
+        shuffled=[...humanPool, ...shuffled.filter(c=>!ids.has(c.id))];
+        state.players[0].cards=sortHand(shuffled.slice(0,humanNeed));
+        state.players[1].cards=sortHand(shuffled.slice(humanNeed,humanNeed+aiNeed));
+        state.players[2].cards=sortHand(shuffled.slice(humanNeed+aiNeed,humanNeed+aiNeed*2));
+        state.dizhuCards=shuffled.slice(humanNeed+aiNeed*2,humanNeed+aiNeed*2+dizhuNeed);
+      } else {
+        state.players[0].cards=sortHand(shuffled.slice(0,humanNeed));
+        state.players[1].cards=sortHand(shuffled.slice(humanNeed,humanNeed+aiNeed));
+        state.players[2].cards=sortHand(shuffled.slice(humanNeed+aiNeed,humanNeed+aiNeed*2));
+        state.dizhuCards=shuffled.slice(humanNeed+aiNeed*2,humanNeed+aiNeed*2+dizhuNeed);
+      }
+      state.players.forEach(p=>{ p.isDizhu=false; p.passed=false; p.finished=false; p.playedCards=[]; });
+      multiplierLog10 = 0; state.bombCount=0; state.isSpring=false; state.isReverseSpring=false;
+      state.lastPlayed=null; state.lastBy=-1; state.passCount=0; state.phase='bidding';
+      refreshUI(); showBidding();
+    }
+
+    function showBidding(){
+      document.getElementById('setupOverlay').style.display='none';
+      document.getElementById('resultOverlay').style.display='none';
+      document.getElementById('doubleOverlay').style.display='none';
+      document.getElementById('actionButtons').style.display='none';
+      document.getElementById('turnIndicator').textContent='叫地主';
+      document.getElementById('dizhuCardsDisplay').innerHTML='底牌: '+state.dizhuCards.map(c=>`<span class="mini-card ${c.color}">${c.displaySuit}${c.displayValue}</span>`).join('');
+      document.getElementById('actionButtons').style.display='flex';
+      document.getElementById('actionButtons').innerHTML=`<button class="btn btn-primary" onclick="playerBid(true)">👑叫地主</button><button class="btn btn-outline" onclick="playerBid(false)">不叫</button>`;
+    }
+    window.playerBid = function(w){ assignDizhu(w?0:(Math.random()<0.5?1:2)); startDoubling(); };
+    function assignDizhu(idx){
+      state.players.forEach(p=>p.isDizhu=false);
+      state.players[idx].isDizhu=true;
+      state.players[idx].cards=sortHand([...state.players[idx].cards,...state.dizhuCards]);
+      state.dizhuCards=[]; state.currentPlayer=idx;
+    }
+
+    function startDoubling(){
+      state.phase='doubling';
+      document.getElementById('actionButtons').style.display='none';
+      document.getElementById('doubleOverlay').style.display='flex';
+      document.getElementById('doubleCurrentMultiplier').textContent = formatLog10(multiplierLog10, '×');
+    }
+    window.chooseDouble = function(type){
+      document.getElementById('doubleOverlay').style.display='none';
+      if(type==='double'){
+        applyMultiplierAdd(Math.log10(4));
+      } else if(type==='super'){
+        if (multiplierLog10 !== Infinity) {
+          if (multiplierLog10 > 15) {
+            multiplierLog10 = Infinity;
+          } else {
+            const current = Math.pow(10, multiplierLog10);
+            const newLog10 = current * Math.log10(2);
+            multiplierLog10 = isFinite(newLog10) ? newLog10 : Infinity;
+          }
+        }
+      }
+      [1,2].forEach(i=>{ if(Math.random()<0.4) applyMultiplierAdd(Math.random()<0.5?Math.log10(4):0); });
+      startPlaying();
+    };
+
+    function startPlaying(){
+      state.phase='playing'; state.lastPlayed=null; state.lastBy=-1; state.passCount=0;
+      document.getElementById('dizhuCardsDisplay').innerHTML='';
+      document.getElementById('actionButtons').style.display='flex';
+      document.getElementById('actionButtons').innerHTML=`<button class="btn btn-primary" id="btnPlay">出牌</button><button class="btn btn-outline" id="btnPass">不出</button><button class="btn btn-outline" id="btnHint">提示</button>`;
+      document.getElementById('btnPlay').onclick=playSelected;
+      document.getElementById('btnPass').onclick=passRound;
+      document.getElementById('btnHint').onclick=showHint;
+      refreshUI(); processTurn();
+    }
+
+    function processTurn(){
+      if(state.phase!=='playing') return;
+      checkEnd(); if(state.phase==='finished') return;
+      const cp = state.players[state.currentPlayer];
+      if(cp.finished){ advance(); return; }
+      refreshUI();
+      document.getElementById('turnIndicator').textContent = cp.isHuman?'你的回合':`${cp.name}思考中`;
+      if(!cp.isHuman) setTimeout(()=>aiPlay(cp), 300+Math.random()*500);
+    }
+    function advance(){
+      state.currentPlayer=(state.currentPlayer+1)%3;
+      let a=0; while(state.players[state.currentPlayer].finished&&a<3){ state.currentPlayer=(state.currentPlayer+1)%3; a++; }
+      if(a>=3||state.passCount>=2){ state.lastPlayed=null; state.lastBy=-1; state.passCount=0; state.players.forEach(p=>p.passed=false); }
+      processTurn();
+    }
+    function checkEnd(){
+      const h=human(), a1=ai1(), a2=ai2(), dz=dizhu();
+      if(h.cards.length===0&&!h.finished) h.finished=true;
+      if(a1.cards.length===0&&!a1.finished) a1.finished=true;
+      if(a2.cards.length===0&&!a2.finished) a2.finished=true;
+      const farmers=state.players.filter(p=>!p.isDizhu);
+      if(dz&&dz.finished&&farmers.every(f=>f.playedCards.length===0)) state.isSpring=true;
+      if(farmers.some(f=>f.finished)&&dz&&!dz.finished&&dz.playedCards.length<=1) state.isReverseSpring=true;
+      if(dz&&dz.finished) endGame(dz.isHuman?'dizhu_win':'dizhu_win_ai');
+      else if(farmers.every(f=>f.finished)) endGame(!h.isDizhu?'farmer_win':'farmer_win_ai');
+    }
+    function endGame(result){
+      state.phase='finished';
+      let finalLog10 = multiplierLog10;
+      if(state.isSpring) finalLog10 += Math.log10(2);
+      if(state.isReverseSpring) finalLog10 += Math.log10(2);
+      const betLog10 = Math.log10(100000) + finalLog10;
+      const win=(result==='dizhu_win'&&human().isDizhu)||(result==='farmer_win'&&!human().isDizhu);
+      if (win) {
+        goldLog10 = logAdd(goldLog10, betLog10);
+      } else {
+        goldLog10 = logSubtract(goldLog10, betLog10);
+        if (goldLog10 === -Infinity) goldLog10 = 0;
+      }
+      refreshUI();
+      document.getElementById('resultOverlay').style.display='flex';
+      document.getElementById('resultPanel').innerHTML=`
+        <h3>${win?'胜利!':'失败'}</h3>
+        <div class="result-text ${win?'win':'lose'}">${win?'+':'-'}${formatLog10(betLog10)}金豆</div>
+        <p>倍率: ${formatLog10(multiplierLog10, '×')} | 炸弹:${state.bombCount}</p>
+        <button class="btn btn-primary big-btn" onclick="resetGame()">再来</button>`;
+    }
+
+    let selectedIds=new Set(), lastClickValue=null, lastClickTime=0;
+    function toggleCard(id, value){
+      if(state.phase!=='playing'||state.currentPlayer!==0) return;
+      const now=Date.now();
+      if(lastClickValue===value && (now-lastClickTime)<400){
+        const h=human();
+        const same=h.cards.filter(c=>c.value===value);
+        if(same.length){
+          const allSel=same.every(c=>selectedIds.has(c.id));
+          if(allSel) same.forEach(c=>selectedIds.delete(c.id));
+          else same.forEach(c=>selectedIds.add(c.id));
+        }
+        lastClickValue=null; lastClickTime=0;
+      } else {
+        lastClickValue=value; lastClickTime=now;
+        selectedIds.has(id)?selectedIds.delete(id):selectedIds.add(id);
+      }
+      refreshUI();
+    }
+    window.toggleCard = toggleCard;
+
+    function playSelected(){
+      if(state.phase!=='playing'||state.currentPlayer!==0) return;
+      const h=human(); if(h.finished) return;
+      const sel=h.cards.filter(c=>selectedIds.has(c.id));
+      if(!sel.length) return;
+      const ana=analyzeGroup(sel);
+      if(!ana) return;
+      const lastAna=state.lastPlayed?analyzeGroup(state.lastPlayed):null;
+      if(state.lastBy!==0&&!canBeat(ana,lastAna)) return;
+      h.cards=sortHand(h.cards.filter(c=>!selectedIds.has(c.id)));
+      h.playedCards=sel; h.passed=false;
+      state.lastPlayed=sel; state.lastBy=0; state.passCount=0; selectedIds.clear();
+      if(ana.type==='WANG_ZHA'){
+        applyWangZhaBoost(ana.len);
+        state.bombCount++;
+      } else if(ana.type==='BOMB'){
+        state.bombCount++;
+        applyMultiplierAdd((ana.len-3) * Math.log10(2));
+      }
+      refreshUI();
+      if(h.cards.length===0){ h.finished=true; checkEnd(); if(state.phase==='finished') return; }
+      advance();
+    }
+    function passRound(){
+      if(state.phase!=='playing'||state.currentPlayer!==0) return;
+      if(!state.lastPlayed||state.lastBy===0) return;
+      human().passed=true; human().playedCards=[]; selectedIds.clear(); state.passCount++;
+      refreshUI();
+      if(state.passCount>=2){ state.lastPlayed=null; state.lastBy=-1; state.passCount=0; state.players.forEach(p=>p.passed=false); }
+      advance();
+    }
+    function showHint(){
+      if(state.phase!=='playing'||state.currentPlayer!==0) return;
+      const h=human(); if(h.finished) return;
+      const lastAna=state.lastPlayed?analyzeGroup(state.lastPlayed):null;
+      selectedIds.clear();
+      if(!lastAna||state.lastBy===0){ if(h.cards.length) selectedIds.add(h.cards[0].id); }
+      else {
+        const beats=findBeats(h.cards,lastAna);
+        if(beats.length){ beats.sort((a,b)=>a.length-b.length); beats[0].forEach(c=>selectedIds.add(c.id)); }
+      }
+      refreshUI();
+    }
+    function findBeats(hand,lastAna){
+      const res=[], vc={}; hand.forEach(c=>vc[c.value]=(vc[c.value]||0)+1);
+      if(lastAna.type==='WANG_ZHA') return [];
+      if(lastAna.type==='SINGLE'){ Object.keys(vc).map(Number).filter(v=>v>lastAna.main).forEach(v=>{ const c=hand.find(c=>c.value===v); if(c) res.push([c]); }); }
+      else if(lastAna.type==='PAIR'){ Object.keys(vc).map(Number).filter(v=>v>lastAna.main&&vc[v]>=2).forEach(v=>res.push(hand.filter(c=>c.value===v).slice(0,2))); }
+      addSpecial(hand,res); return res;
+    }
+    function addSpecial(hand,res){
+      const vc={}; hand.forEach(c=>vc[c.value]=(vc[c.value]||0)+1);
+      Object.keys(vc).forEach(v=>{ const val=parseInt(v); if(val<16&&vc[val]>=4) res.push(hand.filter(c=>c.value===val).slice(0,vc[val])); });
+      const jokers=hand.filter(c=>c.value>=16);
+      if(jokers.length>=1) res.push(jokers);
+    }
+    function aiPlay(ai){
+      if(state.phase!=='playing') return;
+      const idx=state.players.indexOf(ai);
+      const lastAna=state.lastPlayed?analyzeGroup(state.lastPlayed):null;
+      const isNew=!lastAna||state.lastBy===idx;
+      let chosen=isNew?aiFree(ai):aiBeat(ai,lastAna);
+      if(chosen&&chosen.length){
+        ai.cards=sortHand(ai.cards.filter(c=>!chosen.includes(c)));
+        ai.playedCards=chosen; ai.passed=false;
+        state.lastPlayed=chosen; state.lastBy=idx; state.passCount=0;
+        const ana=analyzeGroup(chosen);
+        if(ana?.type==='WANG_ZHA'){ state.bombCount++; applyWangZhaBoost(ana.len); }
+        else if(ana?.type==='BOMB'){ state.bombCount++; applyMultiplierAdd((ana.len-3)*Math.log10(2)); }
+        refreshUI();
+        if(ai.cards.length===0){ ai.finished=true; checkEnd(); if(state.phase==='finished') return; }
+        advance();
+      } else { ai.passed=true; ai.playedCards=[]; state.passCount++; refreshUI(); advance(); }
+    }
+    function aiFree(ai){ const c=ai.cards; return c.length?[c[0]]:null; }
+    function aiBeat(ai,lastAna){ const b=findBeats(ai.cards,lastAna); return b.length?b[0]:null; }
+
+    function refreshUI(){
+      const h=human(), a1=ai1(), a2=ai2();
+      document.getElementById('goldDisplay').textContent = formatLog10(goldLog10);
+      document.getElementById('multiplierDisplay').textContent = formatLog10(multiplierLog10, '×');
+      document.getElementById('bombCountDisplay').textContent=state.bombCount;
+      document.getElementById('modeDisplay').textContent=state.deckMode+'张';
+      document.getElementById('ai1Label').textContent=a1.isDizhu?'👑AI-1':'AI-1';
+      document.getElementById('ai2Label').textContent=a2.isDizhu?'👑AI-2':'AI-2';
+      document.getElementById('playerLabel').textContent=h.isDizhu?'👑我':'我';
+      document.getElementById('playerLabel').className='player-label'+(h.isDizhu?' dizhu':'');
+      document.getElementById('ai1Count').textContent=a1.cards.length+'张';
+      document.getElementById('ai2Count').textContent=a2.cards.length+'张';
+      document.getElementById('ai1Played').innerHTML=a1.playedCards.length?a1.playedCards.map(c=>`<span class="mini-card ${c.color}">${c.displaySuit}${c.displayValue}</span>`).join(''):(a1.passed?'<span class="pass-text">不出</span>':'');
+      document.getElementById('ai2Played').innerHTML=a2.playedCards.length?a2.playedCards.map(c=>`<span class="mini-card ${c.color}">${c.displaySuit}${c.displayValue}</span>`).join(''):(a2.passed?'<span class="pass-text">不出</span>':'');
+      document.getElementById('myPlayed').innerHTML=h.playedCards.length?h.playedCards.map(c=>`<span class="mini-card ${c.color}">${c.displaySuit}${c.displayValue}</span>`).join(''):(h.passed?'<span class="pass-text">不出</span>':'');
+      const cont=document.getElementById('myCardsContainer');
+      cont.classList.toggle('small-cards', state.deckMode>=57000);
+      cont.innerHTML=h.cards.map(c=>`<div class="card-item ${c.color}${selectedIds.has(c.id)?' selected':''}" onclick="toggleCard('${c.id}',${c.value})"><span class="card-suit">${c.displaySuit}</span><span class="card-value">${c.displayValue}</span></div>`).join('');
+      document.getElementById('roundInfo').textContent=state.lastPlayed?`上家:${state.players[state.lastBy].name} ${state.lastPlayed.length}张`:'新回合';
+      const bp=document.getElementById('btnPlay'), bpa=document.getElementById('btnPass');
+      if(bp){ const myTurn=state.phase==='playing'&&state.currentPlayer===0&&!h.finished; bp.disabled=!myTurn; bpa.disabled=!myTurn||(!state.lastPlayed||state.lastBy===0); }
+    }
+
+    window.startNewGame = function(){
+      state.aiDifficulty=document.getElementById('aiDifficulty').value;
+      state.luckLevel=document.getElementById('luckLevel').value;
+      state.deckMode=parseInt(document.getElementById('deckMode').value);
+      goldLog10 = Math.log10(10000000000);
+      multiplierLog10 = 0;
+      state.bombCount=0;
+      state.players.forEach(p=>{ p.cards=[]; p.isDizhu=false; });
+      state.dizhuCards=[]; state.lastPlayed=null; state.phase='setup'; selectedIds.clear();
+      document.getElementById('setupOverlay').style.display='none';
+      document.getElementById('resultOverlay').style.display='none';
+      document.getElementById('doubleOverlay').style.display='none';
+      deal();
+      document.getElementById('bgMusic').play().catch(()=>{});
+    };
+    window.resetGame = function(){
+      document.getElementById('resultOverlay').style.display='none';
+      document.getElementById('doubleOverlay').style.display='none';
+      document.getElementById('setupOverlay').style.display='flex';
+      state.phase='setup'; state.players.forEach(p=>{ p.cards=[]; });
+      selectedIds.clear(); refreshUI();
+    };
+
+    const ball=document.getElementById('funcBall'), panel=document.getElementById('funcPanel');
+    let drag=false, ox,oy;
+    ball.addEventListener('mousedown',e=>{ drag=true; ox=e.clientX-ball.offsetLeft; oy=e.clientY-ball.offsetTop; });
+    document.addEventListener('mousemove',e=>{ if(drag){ ball.style.left=(e.clientX-ox)+'px'; ball.style.top=(e.clientY-oy)+'px'; ball.style.right='auto'; ball.style.bottom='auto'; } });
+    document.addEventListener('mouseup',()=>drag=false);
+    ball.addEventListener('click',()=>{ panel.style.display=panel.style.display==='flex'?'none':'flex'; });
+    const canvas=document.getElementById('espCanvas'), ctx=canvas.getContext('2d');
+    function drawESP(){
+      const espOn=document.getElementById('espToggle').checked;
+      const lineOn=document.getElementById('lineToggle').checked;
+      const espColor=document.getElementById('espColor').value;
+      const lineColor=document.getElementById('lineColor').value;
+      const cont=document.getElementById('gameContainer');
+      const rect=cont.getBoundingClientRect();
+      canvas.width=rect.width; canvas.height=rect.height;
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      if(!espOn&&!lineOn) return;
+      const cx=canvas.width/2, cy=canvas.height/2;
+      const targets = [
+        { img: document.getElementById('ai1Avatar'), player: state.players[1] },
+        { img: document.getElementById('ai2Avatar'), player: state.players[2] },
+        { img: document.getElementById('playerAvatar'), player: state.players[0] }
+      ];
+      targets.forEach(({img, player}) => {
+        if(!img) return;
+        const r = img.getBoundingClientRect();
+        const x = r.left - rect.left, y = r.top - rect.top, w = r.width, h = r.height;
+        if(espOn){
+          ctx.strokeStyle = espColor; ctx.lineWidth = 2;
+          ctx.strokeRect(x, y, w, h);
+          ctx.fillStyle = espColor; ctx.font = '10px sans-serif';
+          const cardsText = player.cards.slice(0,5).map(c=>c.displaySuit+c.displayValue).join(' ');
+          ctx.fillText(player.name+': '+cardsText+(player.cards.length>5?'...':''), x, y-5);
+        }
+        if(lineOn){
+          ctx.strokeStyle = lineColor; ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(x + w/2, y + h/2); ctx.stroke();
+        }
+      });
+      if(espOn){
+        const hpX=20, hpY=80, hpW=15, hpH=120;
+        ctx.fillStyle='#333'; ctx.fillRect(hpX-2, hpY-2, hpW+4, hpH+4);
+        const grad=ctx.createLinearGradient(hpX, hpY, hpX, hpY+hpH);
+        grad.addColorStop(0,'red'); grad.addColorStop(0.5,'yellow'); grad.addColorStop(1,'green');
+        ctx.fillStyle=grad; ctx.fillRect(hpX, hpY, hpW, hpH*0.7);
+        ctx.fillStyle='white'; ctx.font='10px sans-serif'; ctx.fillText('HP',hpX-5,hpY-5);
+      }
+    }
+    setInterval(drawESP, 200);
+    document.getElementById('espToggle').addEventListener('change',drawESP);
+    document.getElementById('lineToggle').addEventListener('change',drawESP);
+    document.getElementById('espColor').addEventListener('input',drawESP);
+    document.getElementById('lineColor').addEventListener('input',drawESP);
+    window.addEventListener('resize',drawESP);
+  })();
+</script>
+</body>
+</html>
